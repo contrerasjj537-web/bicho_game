@@ -157,7 +157,8 @@ export function crearManejador(db, { secreto }) {
     } catch (e) {
       if (e instanceof Fallo) return { status: e.codigo, body: { ok: false, error: e.message } };
       console.error('bichito api:', e);
-      return { status: 500, body: { ok: false, error: 'Error del servidor' } };
+      const detalle = `${e?.code ?? e?.name ?? 'desconocido'}: ${String(e?.message ?? '').replace(/\s+/g, ' ').slice(0, 120)}`;
+      return { status: 500, body: { ok: false, error: `Error del servidor (${detalle})` } };
     }
   };
 }

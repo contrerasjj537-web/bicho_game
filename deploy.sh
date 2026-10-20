@@ -27,7 +27,11 @@ fi
 git add -A
 
 # 4) Seguridad: nunca subir claves privadas ni contraseñas
-if git diff --cached | grep -qE "BEGIN (RSA |EC )?PRIVATE KEY|\"private_key\"|DB_PASS *= *'[^']+'"; then
+if git diff --cached | grep -qE \
+  -e '^\+-----BEGIN [A-Z ]*PRIVATE KEY-----[[:space:]]*$' \
+  -e '"private_key"[[:space:]]*:' \
+  -e 'PRIVATE KEY-----(\\n)?MII' \
+  -e "DB_PASS *= *'[^']+'"; then
   echo "❌ Se detectó una clave privada o contraseña en los cambios. Cancelo para protegerte."
   echo "   Quita ese archivo (o su contenido) y vuelve a ejecutar."
   git reset -q
