@@ -1,0 +1,13 @@
+# Credenciales: NUNCA al repositorio
+legacy-php/api/config.php
+*firebase-adminsdk*.json
+serviceAccount*.json
+.env
+.env.*
+# Sistema / editores / dependencias
+node_modules/
+.netlify/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

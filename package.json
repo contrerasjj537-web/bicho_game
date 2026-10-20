@@ -1,0 +1,10 @@
+{
+  "name": "bichito",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "El Bichito y las Plantas - juego educativo",
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node test/handler.test.mjs" },
+  "dependencies": { "@google-cloud/firestore": "^7.11.0" }
+}

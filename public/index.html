@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Bichito y las Plantas</title>
+<style>
+:root{--bg:#e8f5e9;--ink:#2e4a2f;--card:#fff;--accent:#7cb342;--accent2:#ff9800;--line:#c5e1a5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1b2b1c;--ink:#e8f5e9;--card:#2a3f2b;--line:#3d5a3e}}
+:root[data-theme="dark"]{--bg:#1b2b1c;--ink:#e8f5e9;--card:#2a3f2b;--line:#3d5a3e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0)}
+#juego{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;user-select:none}
+#wrap{position:relative;width:100%;max-width:900px}
+canvas{width:100%;height:auto;display:block;border-radius:18px;border:4px solid var(--accent);background:#bfe9ff}
+#hud{display:flex;justify-content:space-between;gap:6px;font-size:clamp(12px,2.8vw,20px);font-weight:bold;padding:6px 4px;width:100%;max-width:900px}
+#hPuntos.pulso{animation:pulso .5s;color:#e53935}
+@keyframes pulso{50%{transform:scale(1.4)}}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;border-radius:18px;padding:10px;z-index:5}
+.overlay.on{display:flex}
+.panel{background:var(--card);border-radius:22px;padding:18px;width:100%;max-width:640px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+h1,h2{margin:.2em 0}
+.big{font-size:clamp(18px,3.6vw,26px);margin:8px 0}
+input,select,textarea{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);max-width:100%}
+#nombre{font-size:22px;padding:10px 14px;border:3px solid var(--accent);width:80%;text-align:center;border-radius:14px}
+button{font-family:inherit;cursor:pointer}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:16px;padding:12px 26px;font-size:22px;font-weight:bold;margin-top:10px}
+.speak{background:var(--accent2);color:#fff;border:0;border-radius:50%;width:64px;height:64px;font-size:30px}
+#plantaImg{font-size:clamp(50px,12vw,80px);line-height:1}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.opt{background:var(--card);border:4px solid var(--accent);border-radius:18px;padding:8px 4px;font-size:clamp(14px,3vw,20px);color:var(--ink)}
+.opt .e{display:block;font-size:clamp(36px,9vw,64px);line-height:1.1}
+.opt:active{transform:scale(.95)}
+.opt.bad{animation:shake .4s;border-color:#e53935;background:#ffebee;color:#333}
+.opt.good{border-color:#43a047;background:#c8e6c9;color:#333}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+#ctrl{display:none;gap:10px;margin-top:8px;justify-content:center}
+#ctrl button{width:84px;height:68px;font-size:32px;border-radius:18px;border:0;background:var(--accent);color:#fff;touch-action:none}
+@media (pointer:coarse){#ctrl{display:flex}}
+#btnAdmin{position:absolute;right:10px;bottom:8px;background:none;border:0;font-size:20px;opacity:.35}
+/* ---------- ADMIN ---------- */
+#admin{display:none;max-width:1000px;margin:0 auto;padding:12px 0 40px}
+#admin h1{font-size:24px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button,.sm{background:var(--card);color:var(--ink);border:2px solid var(--accent);border-radius:12px;padding:8px 14px;font-size:15px;font-weight:bold}
+.tabs button.on,.sm.pri{background:var(--accent);color:#fff}
+.sm.red{border-color:#e53935;color:#e53935}
+.sm{padding:6px 10px;font-size:14px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px;text-align:left}
+td input,td select{width:100%;min-width:70px}
+td input[type=number]{width:80px}
+.nota{opacity:.8;font-size:14px;margin:4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.grid label{display:flex;flex-direction:column;font-size:13px;gap:3px;font-weight:bold}
+.qc{border:2px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;background:var(--card)}
+.qc .o{display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:8px;background:var(--bg)}
+.qc .o.ok{background:#c8e6c9;color:#1b5e20}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.cards div{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.cards b{display:block;font-size:26px;color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- ====================== JUEGO ====================== -->
+<div id="juego">
+  <div id="hud"><span id="hNombre">👦</span><span id="hNivel">Nivel 1</span><span id="hPlantas">🌿 0</span><span id="hPuntos">⭐ 0</span></div>
+  <div id="wrap">
+    <canvas id="c" width="900" height="450"></canvas>
+
+    <div class="overlay on" id="ovInicio"><div class="panel">
+      <h1>🐛 El Bichito y las Plantas 🌿</h1>
+      <p class="big">¿Cómo te llamas?</p>
+      <input id="nombre" placeholder="Tu nombre" maxlength="20" autocomplete="off">
+      <br><button class="btn" id="btnJugar">▶ ¡Jugar!</button>
+      <button id="btnAdmin" title="Maestro">⚙</button>
+    </div></div>
+
+    <div class="overlay" id="ovPregunta"><div class="panel">
+      <div id="plantaImg"></div>
+      <div class="big" id="txtPregunta"></div>
+      <button class="speak" id="btnOir" aria-label="Escuchar">🔊</button>
+      <div class="opts" id="opts"></div>
+    </div></div>
+
+    <div class="overlay" id="ovFin"><div class="panel">
+      <h2 id="finTitulo"></h2>
+      <div class="big" id="finTxt"></div>
+      <button class="btn" id="btnSig">Seguir ▶</button>
+    </div></div>
+  </div>
+  <div id="ctrl"><button id="bL">◀</button><button id="bJ">⬆</button><button id="bR">▶</button></div>
+</div>
+
+<!-- ====================== ADMIN ====================== -->
+<div id="admin">
+  <div class="top"><h1>⚙ Panel del maestro</h1><div><span id="estado" class="nota"></span> <button class="sm" onclick="salirAdmin()">⬅ Volver al juego</button></div></div>
+  <div id="gate" class="box">
+    <p class="big">Escribe el PIN para entrar</p>
+    <input id="pin" type="password" inputmode="numeric" placeholder="PIN" onkeydown="if(event.key==='Enter')entrarAdmin()">
+    <button class="sm pri" onclick="entrarAdmin()">Entrar</button>
+    <p id="gateMsg" style="color:#e53935"></p>
+  </div>
+  <div id="panel" style="display:none">
+    <div class="tabs">
+      <button data-t="niveles" onclick="irTab('niveles')">🗺 Niveles</button>
+      <button data-t="preguntas" onclick="irTab('preguntas')">❓ Preguntas</button>
+      <button data-t="stats" onclick="irTab('stats')">📊 Estadísticas</button>
+      <button data-t="ajustes" onclick="irTab('ajustes')">🔧 Ajustes</button>
+    </div>
+    <div id="tabBody"></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   CONFIGURACIÓN VISUAL Y DE VOZ
+   ===================================================== */
+const CONFIG = {
+  SPRITE_URL: "img/bichito.png",
+  CELDA_W: 232, CELDA_H: 196, ESCALA: 0.38,
+  VELOCIDAD: 2.3,
+  ANIMS: {
+    idle:{fila:0,frames:2,fps:2}, walk:{fila:1,frames:6,fps:5},
+    eat:{fila:2,frames:6,fps:5}, jump:{fila:3,frames:4,fps:6}
+  },
+  VOZ_LANG: "es-CO", VOZ_VELOCIDAD: 0.85,
+  // Base de datos: ""  = modo local (solo este navegador)
+  //   "/api" = API en Netlify (Function + Firestore), ver README.md
+  API_URL: "/api"
+};
+const GY = 380;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* =====================================================
+   DATOS — hoy en el navegador (localStorage).
+   Más adelante este bloque se cambia por fetch() a PHP/MySQL.
+   ===================================================== */
+const KC='bichito_cfg_v2', KS='bichito_stats_v2';
+const DB={
+  get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const Q=(nivel,planta,emoji,texto,ops,ok)=>({nivel,planta,emoji,texto,ops,ok});
+const DEF={
+  puntosIniciales:30, pin:"1234",
+  niveles:[["La pradera","pradera"],["El bosque","bosque"],["El atardecer","atardecer"],["La noche","noche"],["La montaña nevada","nieve"]]
+    .map(([nombre,fondo])=>({nombre,fondo,img:"",numPreguntas:3,suma:10,resta:5})),
+  preguntas:[
+    Q(1,"Manzanilla","🌼","¡Encontraste manzanilla! ¿Cuántas flores hay? 🌼🌼🌼",[["2","2️⃣"],["3","3️⃣"],["4","4️⃣"]],1),
+    Q(1,"Sábila","🌵","La sábila es verde. ¿Cuál de estas cosas también es verde?",[["La rana","🐸"],["El sol","☀️"],["La fresa","🍓"]],0),
+    Q(1,"Menta","🌿","Las plantas necesitan algo para crecer. ¿Qué es?",[["Zapato","👟"],["Agua","💧"],["Carro","🚗"]],1),
+    Q(2,"Lavanda","🪻","La lavanda huele muy rico. ¿Con qué parte del cuerpo olemos?",[["La nariz","👃"],["El pie","🦶"],["La mano","✋"]],0),
+    Q(2,"Albahaca","🌱","La albahaca es una planta pequeña. ¿Cuál de estos es más grande?",[["Un árbol","🌳"],["Una hormiga","🐜"],["Una semilla","🌰"]],0),
+    Q(2,"Caléndula","🏵️","La caléndula es de color naranja. ¿Cuál es naranja?",[["La naranja","🍊"],["La uva","🍇"],["La hoja","🍃"]],0),
+    Q(3,"Romero","🌿","El romero crece con el sol. ¿Qué vemos en el cielo de día?",[["La luna","🌙"],["El sol","☀️"],["Una estrella","⭐"]],1),
+    Q(3,"Yerbabuena","🍃","Cuenta las hojas. ¿Cuántas hojas hay? 🍃🍃",[["1","1️⃣"],["2","2️⃣"],["5","5️⃣"]],1),
+    Q(3,"Eucalipto","🌳","El eucalipto es un árbol alto. ¿Quién vive en los árboles?",[["Un pez","🐟"],["Un pájaro","🐦"],["Una vaca","🐄"]],1),
+    Q(4,"Toronjil","🌿","Es de noche. ¿Qué vemos en el cielo de noche?",[["La luna","🌙"],["El sol","☀️"],["Un carro","🚗"]],0),
+    Q(4,"Valeriana","🌸","La valeriana ayuda a dormir. ¿Qué hacemos de noche?",[["Dormir","😴"],["Correr","🏃"],["Comer helado","🍦"]],0),
+    Q(4,"Orégano","🌿","Cuenta las estrellas. ¿Cuántas estrellas hay? ⭐⭐⭐⭐",[["3","3️⃣"],["4","4️⃣"],["5","5️⃣"]],1),
+    Q(5,"Jengibre","🌱","La nieve es muy fría. ¿Qué nos ponemos cuando hace frío?",[["Un abrigo","🧥"],["Sandalias","🩴"],["Gafas de sol","🕶️"]],0),
+    Q(5,"Tomillo","🌿","El tomillo es verde. ¿De qué color es la nieve?",[["Blanca","⚪"],["Roja","🔴"],["Negra","⚫"]],0),
+    Q(5,"Ruda","🌿","¡Última planta! ¿Cuántos deditos tiene una mano?",[["3","3️⃣"],["5","5️⃣"],["8","8️⃣"]],1)
+  ].map((q,i)=>({id:i+1,...q}))
+};
+let cfg=DB.get(KC,null);
+if(!cfg||!cfg.niveles||!cfg.preguntas){cfg=JSON.parse(JSON.stringify(DEF));DB.set(KC,cfg)}
+let TOKEN=null, STATS=[], PIN_DEF=false, tSube=null;
+const KP='bichito_pend_v2';
+async function api(action,data={}){
+  const r=await fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,token:TOKEN,...data})});
+  const j=await r.json();if(!j.ok)throw new Error(j.error||'Error');return j;
+}
+function estadoAdmin(t){const e=$('estado');if(e)e.textContent=t}
+function guardarCfg(){DB.set(KC,cfg);if(CONFIG.API_URL&&TOKEN){clearTimeout(tSube);estadoAdmin('Guardando…');tSube=setTimeout(subirCfg,500)}}
+async function subirCfg(){
+  try{await api('guardar_config',{cfg:{puntosIniciales:cfg.puntosIniciales,niveles:cfg.niveles,preguntas:cfg.preguntas}});estadoAdmin('✔ Guardado en la base de datos')}
+  catch(e){estadoAdmin('⚠ No se pudo guardar: '+e.message)}
+}
+async function cargarRemoto(){
+  if(!CONFIG.API_URL)return;
+  try{const j=await api('config');cfg=j.cfg;DB.set(KC,cfg)}catch(e){}
+  flushPend();
+}
+const pendientes=()=>DB.get(KP,{});
+function flushPend(){const p=pendientes();Object.keys(p).forEach(u=>api('partida_guardar',{sesion:p[u]}).then(()=>{const q=pendientes();delete q[u];DB.set(KP,q)}).catch(()=>{}))}
+function enviar(s){
+  const copia=JSON.parse(JSON.stringify(s));
+  api('partida_guardar',{sesion:copia}).then(()=>{const p=pendientes();if(p[s.uid]){delete p[s.uid];DB.set(KP,p)}flushPend()})
+   .catch(()=>{const p=pendientes();p[s.uid]=copia;DB.set(KP,p)});
+}
+
+/* =====================================================
+   TEMAS DE FONDO (uno por nivel, configurable en el admin)
+   ===================================================== */
+const TEMAS={
+ pradera:{n:"☀️ Pradera",c:["#8fd3ff","#e6f7ff"],astro:{x:760,y:80,r:34,c:"#fff176"},nube:1,h1:"#a5d6a7",h2:"#81c784",pasto:"#7cb342",tierra:"#8d6e63",deco:["🌷","🌼","🌳","🌻"]},
+ bosque:{n:"🌲 Bosque",c:["#a5d6a7","#e8f5e9"],astro:{x:140,y:70,r:28,c:"#fff9c4"},nube:1,h1:"#66bb6a",h2:"#388e3c",pasto:"#558b2f",tierra:"#5d4037",deco:["🌲","🌳","🍄","🌲"]},
+ atardecer:{n:"🌇 Atardecer",c:["#ff7043","#ffe0b2"],astro:{x:200,y:290,r:55,c:"#ffcc80"},pico:1,h1:"#bcaaa4",h2:"#8d6e63",pasto:"#aed581",tierra:"#795548",deco:["🌵","🌾","🌴","🌻"]},
+ noche:{n:"🌙 Noche",c:["#0d1b3e","#33477a"],astro:{x:740,y:80,r:30,c:"#fffde7"},estrellas:1,h1:"#1a2a4f",h2:"#14213d",pasto:"#2e7d32",tierra:"#3e2723",deco:["🌲","🍄","🌳","🌿"]},
+ nieve:{n:"❄️ Nieve",c:["#b3e5fc","#ffffff"],astro:{x:760,y:80,r:30,c:"#fff9c4"},nube:1,nieve:1,pico:1,h1:"#cfd8dc",h2:"#90a4ae",pasto:"#eceff1",tierra:"#78909c",deco:["⛄","🌲","❄️","🌲"]}
+};
+const STARS=Array.from({length:55},(_,i)=>({x:(i*173)%900,y:(i*89)%250,r:1+(i%3)}));
+
+/* ===================== ESTADO ===================== */
+const cv=$('c'), ctx=cv.getContext('2d');
+let alumno="", nivelIdx=0, NV=cfg.niveles[0], L=null, jugando=false, pausa=true, recogidas=0, puntos=0;
+let cam=0, keys={}, particles=[], flotantes=[], comerHasta=0, sesion=null;
+const P={x:80,y:GY-40,w:50,h:40,vx:0,vy:0,dir:1,suelo:false,t:0};
+let plantas=[], opcionesAct=[], preguntaActual=null, accionFin=null;
+let sprite=null; if(CONFIG.SPRITE_URL){sprite=new Image();sprite.src=CONFIG.SPRITE_URL}
+const imgCache={};
+function fondoImg(){const u=NV.img;if(!u)return null;if(!imgCache[u]){const i=new Image();i.onerror=()=>{i.bad=1};i.src=u;imgCache[u]=i}
+  const i=imgCache[u];return(i.complete&&i.naturalWidth&&!i.bad)?i:null}
+const barajar=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ===================== VOZ ===================== */
+let voz=null;
+function cargarVoz(){const vs=speechSynthesis.getVoices();voz=vs.find(v=>v.lang===CONFIG.VOZ_LANG)||vs.find(v=>v.lang.startsWith('es'))||null}
+if('speechSynthesis' in window){cargarVoz();speechSynthesis.onvoiceschanged=cargarVoz}
+function hablar(lista){
+  if(!('speechSynthesis' in window))return;
+  speechSynthesis.cancel();
+  [].concat(lista).forEach(t=>{if(!t)return;const u=new SpeechSynthesisUtterance(t);
+    u.lang=CONFIG.VOZ_LANG;u.rate=CONFIG.VOZ_VELOCIDAD;u.pitch=1.15;if(voz)u.voice=voz;speechSynthesis.speak(u)});
+}
+const limpio=t=>t.replace(/[^\p{L}\p{N}\s¿?¡!.,]/gu,'');
+const NUM=["Primera","Segunda","Tercera"];
+function leerPregunta(){hablar([limpio(preguntaActual.texto)].concat(opcionesAct.map((o,i)=>NUM[i]+" opción: "+o.t)))}
+
+/* ===================== NIVELES ===================== */
+function cargarNivel(i){
+  nivelIdx=i;NV=cfg.niveles[i];
+  const pool0=barajar(cfg.preguntas.filter(q=>q.nivel===i+1)).concat(barajar(cfg.preguntas.filter(q=>q.nivel===0)));
+  const pool=pool0.length?pool0:barajar(cfg.preguntas);
+  const n=pool.length?Math.max(1,NV.numPreguntas):0, sp=520;
+  const plats=[],pls=[];
+  for(let k=0;k<n;k++){const x=650+k*sp;
+    if(k%2){plats.push({x:x-55,y:290,w:150});pls.push({x,y:250,q:pool[k%pool.length]})}
+    else pls.push({x,y:GY-40,q:pool[k%pool.length]})}
+  const len=700+Math.max(n,1)*sp+250, R=rng(i*9973+7), T=TEMAS[NV.fondo]||TEMAS.pradera, deco=[];
+  for(let x=200;x<len;x+=140+R()*140)deco.push({x,e:T.deco[Math.floor(R()*T.deco.length)]});
+  L={len,plats,deco};
+  plantas=pls.map(p=>({...p,tomada:false}));
+  P.x=80;P.y=GY-P.h;P.vx=P.vy=0;cam=0;recogidas=0;particles=[];flotantes=[];
+  if(sesion){sesion.nivelMax=Math.max(sesion.nivelMax,i+1);guardarSesion()}
+  hud();
+}
+function hud(){
+  $('hNombre').textContent="👦 "+alumno;
+  $('hNivel').textContent="Nivel "+(nivelIdx+1)+" · "+NV.nombre;
+  $('hPlantas').textContent="🌿 "+recogidas+"/"+plantas.length;
+  $('hPuntos').textContent="⭐ "+puntos;
+}
+function guardarSesion(){
+  if(CONFIG.API_URL){enviar(sesion);return}
+  const S=DB.get(KS,[]);const i=S.findIndex(s=>s.id===sesion.id);if(i<0)S.push(sesion);else S[i]=sesion;DB.set(KS,S)
+}
+function nuevaPartida(){
+  puntos=cfg.puntosIniciales;
+  sesion={id:Date.now(),uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8),alumno,inicio:new Date().toISOString(),fin:null,nivelMax:1,puntos,estado:'jugando',resp:[]};
+  cargarNivel(0);guardarSesion();jugando=true;pausa=false;
+}
+
+/* ===================== PREGUNTAS ===================== */
+function abrirPregunta(pl){
+  pausa=true;preguntaActual=pl.q;const q=pl.q;
+  opcionesAct=barajar(q.ops.map((o,i)=>({t:o[0],e:o[1],ok:i===q.ok})).filter(o=>String(o.t).trim()));
+  $('plantaImg').textContent=q.emoji;$('txtPregunta').textContent=q.texto;
+  const cont=$('opts');cont.innerHTML="";
+  opcionesAct.forEach(o=>{const b=document.createElement('button');b.className='opt';
+    b.innerHTML='<span class="e">'+esc(o.e)+'</span>'+esc(o.t);b.onclick=()=>responder(o,b,pl);cont.appendChild(b)});
+  $('ovPregunta').classList.add('on');leerPregunta();
+}
+function responder(o,btn,pl){
+  const q=preguntaActual;
+  sesion.resp.push({n:nivelIdx+1,q:q.id,t:q.texto.slice(0,90),ok:o.ok,f:new Date().toISOString()});
+  if(o.ok){
+    btn.classList.add('good');
+    puntos+=NV.suma;pl.tomada=true;recogidas++;
+    if(NV.suma>0)flotantes.push({x:pl.x,y:pl.y,t:"+"+NV.suma,l:60});
+    confeti(pl.x+20,pl.y);hablar(["¡Muy bien, "+alumno+"! Esa es la respuesta correcta."]);
+    sesion.puntos=puntos;guardarSesion();hud();
+    setTimeout(()=>{$('ovPregunta').classList.remove('on');comerHasta=Date.now()+1500;
+      setTimeout(()=>{pausa=false},1500)},1200);
+  }else{
+    btn.classList.add('bad');setTimeout(()=>btn.classList.remove('bad'),500);
+    puntos=Math.max(0,puntos-NV.resta);sesion.puntos=puntos;guardarSesion();hud();
+    if(NV.resta>0){const h=$('hPuntos');h.classList.remove('pulso');void h.offsetWidth;h.classList.add('pulso')}
+    if(puntos<=0&&NV.resta>0){hablar(["Ay, se acabaron los puntos."]);setTimeout(perder,1800)}
+    else hablar(["Casi. Inténtalo otra vez, "+alumno+"."]);
+  }
+}
+function mostrarFin(titulo,txt,boton,accion,voz_){
+  pausa=true;$('ovPregunta').classList.remove('on');
+  $('finTitulo').textContent=titulo;$('finTxt').textContent=txt;$('btnSig').textContent=boton;accionFin=accion;
+  $('ovFin').classList.add('on');hablar(voz_||[limpio(titulo),txt]);
+}
+function perder(){
+  sesion.estado='perdió';sesion.fin=new Date().toISOString();guardarSesion();
+  mostrarFin("😢 ¡Se acabaron los puntos!","No te preocupes, "+alumno+". ¡Vamos a intentarlo otra vez!","🔄 Jugar otra vez",()=>nuevaPartida());
+}
+function ganarNivel(){
+  pausa=true;
+  if(nivelIdx>=cfg.niveles.length-1){
+    sesion.estado='completó';sesion.fin=new Date().toISOString();sesion.puntos=puntos;guardarSesion();
+    mostrarFin("🏆 ¡Terminaste todos los niveles!","¡Felicitaciones, "+alumno+"! Tienes "+puntos+" puntos.","🔄 Jugar otra vez",()=>nuevaPartida());
+  }else{
+    const sig=cfg.niveles[nivelIdx+1].nombre;
+    mostrarFin("🎉 ¡Nivel completo!","¡Excelente, "+alumno+"! Ahora vamos a: "+sig,"Seguir ▶",()=>{cargarNivel(nivelIdx+1);pausa=false;
+      hablar(["Nivel "+(nivelIdx+1)+". "+NV.nombre])});
+  }
+}
+$('btnSig').onclick=()=>{$('ovFin').classList.remove('on');const a=accionFin;accionFin=null;if(a)a()};
+$('btnOir').onclick=leerPregunta;
+$('btnJugar').onclick=()=>{
+  alumno=$('nombre').value.trim()||"amiguito";
+  $('ovInicio').classList.remove('on');nuevaPartida();
+  hablar(["Hola "+alumno+". Ayuda al bichito a recoger las plantas y llegar a la bandera. Usa las flechas para moverte y salta con la barra."]);
+};
+
+/* ===================== CONTROLES ===================== */
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowLeft','ArrowRight'].includes(e.code)&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=false);
+[['bL','ArrowLeft'],['bR','ArrowRight'],['bJ','Space']].forEach(([id,k])=>{const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+
+/* ===================== FÍSICA ===================== */
+function actualizar(){
+  const izq=keys.ArrowLeft||keys.KeyA, der=keys.ArrowRight||keys.KeyD, salto=keys.Space||keys.ArrowUp||keys.KeyW;
+  P.vx=der?CONFIG.VELOCIDAD:izq?-CONFIG.VELOCIDAD:0;
+  if(P.vx)P.dir=P.vx>0?1:-1;
+  if(salto&&P.suelo){P.vy=-12.5;P.suelo=false}
+  P.vy+=0.6;const prevB=P.y+P.h;
+  P.x+=P.vx;P.y+=P.vy;P.x=Math.max(0,Math.min(L.len-P.w,P.x));P.suelo=false;
+  if(P.y+P.h>=GY){P.y=GY-P.h;P.vy=0;P.suelo=true}
+  L.plats.forEach(p=>{if(P.vy>=0&&prevB<=p.y+4&&P.y+P.h>=p.y&&P.x+P.w>p.x&&P.x<p.x+p.w){P.y=p.y-P.h;P.vy=0;P.suelo=true}});
+  P.t+=Math.abs(P.vx)*0.08;
+  cam=Math.max(0,Math.min(L.len-900,P.x-300));
+  for(const pl of plantas){if(!pl.tomada&&Math.abs(P.x+P.w/2-(pl.x+18))<40&&Math.abs(P.y+P.h/2-(pl.y+18))<45){abrirPregunta(pl);return}}
+  if(P.x+P.w>=L.len-120){ganarNivel();return}   // llegó a la meta
+}
+function confeti(x,y){for(let i=0;i<30;i++)particles.push({x,y,vx:Math.random()*8-4,vy:-Math.random()*7,l:50,c:["#ffeb3b","#ff7043","#66bb6a","#ab47bc"][i%4]})}
+
+/* ===================== DIBUJO ===================== */
+function capa(col,par,base,w,h,pico){
+  ctx.fillStyle=col;const off=-(cam*par)%w;
+  for(let x=off-w;x<900+w;x+=w){ctx.beginPath();
+    if(pico){ctx.moveTo(x,base);ctx.lineTo(x+w/2,base-h);ctx.lineTo(x+w,base)}
+    else ctx.ellipse(x+w/2,base,w*0.6,h,0,Math.PI,0);
+    ctx.fill()}
+}
+function dibujarFondo(t){
+  const T=TEMAS[NV.fondo]||TEMAS.pradera, img=fondoImg();
+  if(img){const w=img.naturalWidth*450/img.naturalHeight;for(let x=-(cam*.3)%w;x<900;x+=w)ctx.drawImage(img,x,0,w,450);return T}
+  const g=ctx.createLinearGradient(0,0,0,GY);g.addColorStop(0,T.c[0]);g.addColorStop(1,T.c[1]);
+  ctx.fillStyle=g;ctx.fillRect(0,0,900,450);
+  if(T.estrellas){ctx.fillStyle="#fff";STARS.forEach((s,i)=>{ctx.globalAlpha=.5+.5*Math.sin(t/500+i);ctx.fillRect(s.x,s.y,s.r,s.r)});ctx.globalAlpha=1}
+  if(T.astro){ctx.fillStyle=T.astro.c;ctx.beginPath();ctx.arc(T.astro.x,T.astro.y,T.astro.r,0,7);ctx.fill()}
+  if(T.nube){ctx.fillStyle="rgba(255,255,255,.9)";[[120,70],[420,50],[700,110]].forEach(([x,y])=>{const px=((x-cam*0.2)%1100+1100)%1100-100;
+    ctx.beginPath();ctx.arc(px,y,26,0,7);ctx.arc(px+30,y+6,22,0,7);ctx.arc(px-28,y+8,20,0,7);ctx.fill()})}
+  capa(T.h1,.2,GY+10,420,140,T.pico);capa(T.h2,.4,GY+30,300,90,T.pico);
+  return T;
+}
+function dibujar(){
+  const t=Date.now();
+  if(!L){ctx.fillStyle="#bfe9ff";ctx.fillRect(0,0,900,450);return}
+  const T=dibujarFondo(t);
+  if(T.nieve){ctx.fillStyle="#fff";for(let i=0;i<45;i++){ctx.beginPath();ctx.arc(((i*137)%900+Math.sin(t/900+i)*15+900)%900,((i*61)+t/(14+i%3*5))%450,2+i%3,0,7);ctx.fill()}}
+  ctx.save();ctx.translate(-cam,0);
+  ctx.fillStyle=T.tierra;ctx.fillRect(0,GY,L.len+200,90);
+  ctx.fillStyle=T.pasto;ctx.fillRect(0,GY,L.len+200,14);
+  ctx.font="44px serif";L.deco.forEach(d=>ctx.fillText(d.e,d.x,GY+4));
+  L.plats.forEach(p=>{ctx.fillStyle=T.tierra;ctx.fillRect(p.x,p.y,p.w,16);ctx.fillStyle=T.pasto;ctx.fillRect(p.x,p.y,p.w,6)});
+  ctx.fillStyle="#795548";ctx.fillRect(L.len-85,GY-70,5,70);ctx.font="48px serif";ctx.fillText("🏁",L.len-82,GY-34);
+  ctx.font="40px serif";
+  plantas.forEach(pl=>{if(!pl.tomada){const b=Math.sin(t/300+pl.x)*4;ctx.fillText(pl.q.emoji,pl.x,pl.y+34+b)}});
+  dibujarBicho();
+  particles.forEach(q=>{ctx.fillStyle=q.c;ctx.fillRect(q.x,q.y,7,7)});
+  ctx.font="bold 30px sans-serif";ctx.textAlign="center";
+  flotantes.forEach(f=>{ctx.globalAlpha=Math.min(1,f.l/30);ctx.fillStyle="#ffeb3b";ctx.strokeStyle="#333";ctx.lineWidth=4;
+    ctx.strokeText(f.t,f.x+18,f.y);ctx.fillText(f.t,f.x+18,f.y)});
+  ctx.globalAlpha=1;ctx.textAlign="start";
+  ctx.restore();
+}
+function animActual(){
+  if(Date.now()<comerHasta)return["eat",null];
+  if(!P.suelo)return["jump",P.vy<-3?1:(P.vy>3?0:2)];
+  return[Math.abs(P.vx)>0?"walk":"idle",null];
+}
+function dibujarBicho(){
+  ctx.save();ctx.translate(P.x+P.w/2,P.y+P.h);ctx.scale(P.dir,1);
+  if(sprite&&sprite.complete&&sprite.naturalWidth){
+    const[nom,fijo]=animActual(),A=CONFIG.ANIMS[nom];
+    const f=fijo!==null?fijo:Math.floor(Date.now()/1000*A.fps)%A.frames;
+    const w=CONFIG.CELDA_W*CONFIG.ESCALA,h=CONFIG.CELDA_H*CONFIG.ESCALA;
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(sprite,f*CONFIG.CELDA_W,A.fila*CONFIG.CELDA_H,CONFIG.CELDA_W,CONFIG.CELDA_H,-w/2,-h+4,w,h);
+  }else{
+    for(let i=3;i>=0;i--){ctx.fillStyle=i%2?"#7cb342":"#8bc34a";ctx.beginPath();ctx.arc(-i*14-4,-14,15-i*1.2,0,7);ctx.fill()}
+    ctx.fillStyle="#8bc34a";ctx.beginPath();ctx.arc(14,-30,17,0,7);ctx.fill();
+    ctx.fillStyle="#3e2723";ctx.beginPath();ctx.arc(21,-33,2.5,0,7);ctx.arc(11,-33,2.5,0,7);ctx.fill();
+  }
+  ctx.restore();
+}
+function bucle(){
+  if(jugando&&!pausa&&L)actualizar();
+  particles.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.25;q.l--});particles=particles.filter(q=>q.l>0);
+  flotantes.forEach(f=>{f.y-=1;f.l--});flotantes=flotantes.filter(f=>f.l>0);
+  dibujar();requestAnimationFrame(bucle);
+}
+bucle();
+
+/* =====================================================
+   PANEL DEL MAESTRO
+   ===================================================== */
+let tab='niveles', editQ=null, filtroQ='all';
+$('btnAdmin').onclick=abrirAdmin;
+function abrirAdmin(){speechSynthesis&&speechSynthesis.cancel();$('juego').style.display='none';$('admin').style.display='block';
+  $('gate').style.display='block';$('panel').style.display='none';$('pin').value='';$('gateMsg').textContent='';scrollTo(0,0)}
+function salirAdmin(){$('admin').style.display='none';$('juego').style.display='flex';if(location.hash==='#admin')history.replaceState(null,'',location.pathname)}
+async function entrarAdmin(){
+  const pin=$('pin').value;
+  if(CONFIG.API_URL){
+    $('gateMsg').textContent='Entrando…';
+    try{const j=await api('login',{pin});TOKEN=j.token;PIN_DEF=!!j.pinPorDefecto;await cargarRemoto();$('gateMsg').textContent=''}
+    catch(e){$('gateMsg').textContent=/fetch|network/i.test(e.message)?'No hay conexión con el servidor':e.message;return}
+  }else if(pin!==String(cfg.pin)){$('gateMsg').textContent='PIN incorrecto';return}
+  $('gate').style.display='none';$('panel').style.display='block';tab='niveles';render();
+}
+async function irTab(t){
+  tab=t;
+  if(t==='stats'){$('tabBody').innerHTML='<div class="box">Cargando…</div>';STATS=await cargarStats()}
+  render();
+}
+async function cargarStats(){
+  if(!CONFIG.API_URL)return DB.get(KS,[]);
+  try{return(await api('stats')).sesiones}catch(e){estadoAdmin('⚠ '+e.message);return[]}
+}
+async function borrarStats(){
+  if(CONFIG.API_URL){try{await api('borrar_stats')}catch(e){estadoAdmin('⚠ '+e.message);return}}
+  DB.set(KS,[]);STATS=[];render();
+}
+async function cambiarPin(el){
+  const v=el.value.trim();if(v.length<4){estadoAdmin('El PIN debe tener al menos 4 caracteres');return}
+  try{await api('cambiar_pin',{pin:v});PIN_DEF=false;el.value='';estadoAdmin('✔ PIN cambiado');setTimeout(render,0)}catch(e){estadoAdmin('⚠ '+e.message)}
+}
+function sure(el,fn){if(el.dataset.s){fn();return}el.dataset.s=1;const o=el.textContent;el.textContent='¿Seguro?';setTimeout(()=>{delete el.dataset.s;el.textContent=o},2500)}
+function bajar(nombre,txt,tipo){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nombre;a.click()}
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  $('tabBody').innerHTML=({niveles:vNiveles,preguntas:vPreguntas,stats:vStats,ajustes:vAjustes})[tab]();
+}
+/* ---------- Niveles ---------- */
+function vNiveles(){
+  return '<div class="box"><p class="nota">Cada nivel tiene su fondo, cuántas preguntas (plantas) aparecen y los puntos. Pon <b>0</b> en "Suma" para que no sume y <b>0</b> en "Resta" para que no descuente. Los cambios se guardan solos.</p><div class="scroll"><table><tr><th>#</th><th>Nombre</th><th>Fondo</th><th>Imagen propia (opcional)</th><th>Preguntas</th><th>⭐ Suma al acertar</th><th>⭐ Resta al fallar</th></tr>'+
+  cfg.niveles.map((n,i)=>`<tr><td>${i+1}</td><td><input value="${esc(n.nombre)}" onchange="setN(${i},'nombre',this.value)"></td>
+  <td><select onchange="setN(${i},'fondo',this.value)">${Object.keys(TEMAS).map(k=>`<option value="${k}" ${k===n.fondo?'selected':''}>${TEMAS[k].n}</option>`).join('')}</select></td>
+  <td><input value="${esc(n.img)}" placeholder="img/fondo${i+1}.jpg" onchange="setN(${i},'img',this.value.trim())"></td>
+  <td><input type="number" min="1" max="10" value="${n.numPreguntas}" onchange="setN(${i},'numPreguntas',+this.value)"></td>
+  <td><input type="number" min="0" max="100" value="${n.suma}" onchange="setN(${i},'suma',+this.value)"></td>
+  <td><input type="number" min="0" max="100" value="${n.resta}" onchange="setN(${i},'resta',+this.value)"></td></tr>`).join('')+
+  '</table></div><p class="nota">Si el nivel pide más preguntas de las que tiene cargadas, se repiten. Imagen propia: sube tu paisaje a la carpeta <b>img</b> y escribe su ruta (ej. img/fondo1.jpg).</p></div>';
+}
+function setN(i,k,v){if(typeof v==='number'){v=Math.round(v)||0;v=Math.max(k==='numPreguntas'?1:0,Math.min(k==='numPreguntas'?10:100,v))}
+  cfg.niveles[i][k]=v;guardarCfg();setTimeout(render,0)}
+/* ---------- Preguntas ---------- */
+function opNiveles(sel){return '<option value="0" '+(sel===0?'selected':'')+'>Todos los niveles (comodín)</option>'+cfg.niveles.map((n,i)=>`<option value="${i+1}" ${sel===i+1?'selected':''}>Nivel ${i+1}: ${esc(n.nombre)}</option>`).join('')}
+function vPreguntas(){
+  const e=editQ||{id:0,nivel:1,planta:"",emoji:"🌿",texto:"",ops:[["",""],["",""],["",""]],ok:0};
+  const ops=[0,1,2].map(i=>e.ops[i]||["",""]);
+  let h=`<div class="box"><h3 style="margin:0 0 8px">${e.id?'✏️ Editar pregunta':'➕ Nueva pregunta'}</h3><div class="grid">
+   <label>Nivel<select id="fN">${opNiveles(e.nivel)}</select></label>
+   <label>Nombre de la planta<input id="fP" value="${esc(e.planta)}" placeholder="Manzanilla"></label>
+   <label>Emoji de la planta<input id="fE" value="${esc(e.emoji)}" maxlength="4"></label></div>
+   <label style="display:flex;flex-direction:column;font-size:13px;gap:3px;font-weight:bold;margin:8px 0">Pregunta (se lee en voz alta)<input id="fT" value="${esc(e.texto)}" placeholder="¿De qué color es el sol?"></label>
+   <div class="grid">${ops.map((o,i)=>`<label>Opción ${i+1} ${i==2?'(opcional)':''}<input id="o${i}t" value="${esc(o[0])}" placeholder="Texto que se lee"><input id="o${i}e" value="${esc(o[1])}" placeholder="Emoji" maxlength="4"></label>`).join('')}
+   <label>Respuesta correcta<select id="fOk">${[0,1,2].map(i=>`<option value="${i}" ${e.ok===i?'selected':''}>Opción ${i+1}</option>`).join('')}</select></label></div>
+   <p id="fMsg" style="color:#e53935;margin:6px 0"></p>
+   <button class="sm pri" onclick="guardarQ()">💾 Guardar pregunta</button> ${editQ?'<button class="sm" onclick="editQ=null;render()">Cancelar</button>':''}</div>`;
+  const lista=cfg.preguntas.filter(q=>filtroQ==='all'||q.nivel===+filtroQ);
+  h+=`<div class="box"><label>Ver: <select onchange="filtroQ=this.value;render()"><option value="all">Todas (${cfg.preguntas.length})</option>${opNiveles(filtroQ==='all'?-1:+filtroQ).replace('Todos los niveles (comodín)','Solo comodines')}</select></label>`;
+  h+=lista.map(q=>`<div class="qc"><b>${esc(q.emoji)} ${esc(q.planta)}</b> · <small>${q.nivel?'Nivel '+q.nivel:'Comodín (todos)'}</small><div style="margin:4px 0">${esc(q.texto)}</div>
+   ${q.ops.filter(o=>String(o[0]).trim()).map((o)=>`<span class="o ${q.ops.indexOf(o)===q.ok?'ok':''}">${esc(o[1])} ${esc(o[0])}${q.ops.indexOf(o)===q.ok?' ✓':''}</span>`).join('')}
+   <div style="margin-top:6px"><button class="sm" onclick="editarQ(${q.id})">✏️ Editar</button> <button class="sm" onclick="probarQ(${q.id})">🔊 Escuchar</button> <button class="sm red" onclick="sure(this,()=>borrarQ(${q.id}))">🗑 Borrar</button></div></div>`).join('')||'<p>No hay preguntas aquí.</p>';
+  return h+'</div>';
+}
+function editarQ(id){editQ=JSON.parse(JSON.stringify(cfg.preguntas.find(q=>q.id===id)));render();scrollTo(0,0)}
+function borrarQ(id){cfg.preguntas=cfg.preguntas.filter(q=>q.id!==id);guardarCfg();if(editQ&&editQ.id===id)editQ=null;render()}
+function probarQ(id){const q=cfg.preguntas.find(x=>x.id===id);hablar([limpio(q.texto)].concat(q.ops.filter(o=>String(o[0]).trim()).map((o,i)=>NUM[i]+" opción: "+o[0])))}
+function guardarQ(){
+  const g=id=>$(id).value.trim(), ops=[0,1,2].map(i=>[g('o'+i+'t'),g('o'+i+'e')]), ok=+$('fOk').value;
+  const msg=m=>{$('fMsg').textContent=m};
+  if(!g('fT'))return msg('Escribe la pregunta.');
+  if(ops.filter(o=>o[0]).length<2)return msg('Escribe al menos 2 opciones.');
+  if(!ops[ok][0])return msg('La respuesta correcta no puede estar vacía.');
+  const q={id:editQ?editQ.id:(Math.max(0,...cfg.preguntas.map(x=>x.id))+1),nivel:+$('fN').value,planta:g('fP')||'Planta',emoji:g('fE')||'🌿',texto:g('fT'),ops,ok};
+  const i=cfg.preguntas.findIndex(x=>x.id===q.id);if(i<0)cfg.preguntas.push(q);else cfg.preguntas[i]=q;
+  guardarCfg();editQ=null;render();
+}
+/* ---------- Estadísticas ---------- */
+function vStats(){
+  const S=STATS;if(!S.length)return '<div class="box"><p>Todavía no hay partidas guardadas'+(CONFIG.API_URL?'.':' en este dispositivo.')+'</p></div>';
+  const al={},pq={};let tot=0,oks=0;
+  S.forEach(s=>{const k=s.alumno.toLowerCase();const a=al[k]||(al[k]={n:s.alumno,p:0,niv:0,best:0,r:0,ok:0,ult:''});
+    a.p++;a.niv=Math.max(a.niv,s.nivelMax);a.best=Math.max(a.best,s.puntos);if(s.inicio>a.ult)a.ult=s.inicio;
+    s.resp.forEach(r=>{a.r++;tot++;if(r.ok){a.ok++;oks++}const q=pq[r.q]||(pq[r.q]={t:r.t,r:0,ok:0});q.r++;if(r.ok)q.ok++})});
+  const pc=(a,b)=>b?Math.round(a*100/b)+'%':'-', fe=d=>new Date(d).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'});
+  const estado={jugando:'Incompleta',perdió:'Se quedó sin puntos',completó:'🏆 Completó el juego'};
+  return `<div class="cards"><div><b>${S.length}</b>partidas</div><div><b>${Object.keys(al).length}</b>niños</div><div><b>${pc(oks,tot)}</b>de aciertos</div><div><b>${tot}</b>respuestas</div></div>
+  <div class="box"><h3 style="margin:0 0 6px">👦 Por niño</h3><div class="scroll"><table><tr><th>Nombre</th><th>Partidas</th><th>Nivel más alto</th><th>Mejor puntaje</th><th>Respuestas</th><th>Aciertos</th><th>Última vez</th></tr>
+  ${Object.values(al).sort((a,b)=>b.ult.localeCompare(a.ult)).map(a=>`<tr><td>${esc(a.n)}</td><td>${a.p}</td><td>${a.niv}</td><td>${a.best}</td><td>${a.r}</td><td>${pc(a.ok,a.r)}</td><td>${fe(a.ult)}</td></tr>`).join('')}</table></div></div>
+  <div class="box"><h3 style="margin:0 0 6px">❓ Preguntas (de la más difícil a la más fácil)</h3><div class="scroll"><table><tr><th>Pregunta</th><th>Respuestas</th><th>Aciertos</th></tr>
+  ${Object.values(pq).sort((a,b)=>a.ok/a.r-b.ok/b.r).map(q=>`<tr><td>${esc(q.t)}</td><td>${q.r}</td><td>${pc(q.ok,q.r)}</td></tr>`).join('')}</table></div></div>
+  <div class="box"><h3 style="margin:0 0 6px">🕒 Últimas partidas</h3><div class="scroll"><table><tr><th>Fecha</th><th>Niño</th><th>Resultado</th><th>Nivel</th><th>Puntos</th></tr>
+  ${S.slice(-15).reverse().map(s=>`<tr><td>${fe(s.inicio)}</td><td>${esc(s.alumno)}</td><td>${estado[s.estado]||s.estado}</td><td>${s.nivelMax}</td><td>${s.puntos}</td></tr>`).join('')}</table></div></div>
+  <button class="sm pri" onclick="exportarCSV()">⬇ Descargar respuestas (CSV)</button>`;
+}
+function exportarCSV(){
+  const S=STATS,c=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const f=[['Fecha','Alumno','Nivel','Pregunta','Correcta'].join(',')];
+  S.forEach(s=>s.resp.forEach(r=>f.push([c(r.f),c(s.alumno),r.n,c(r.t),r.ok?'SI':'NO'].join(','))));
+  bajar('estadisticas-bichito.csv','\ufeff'+f.join('\n'),'text/csv');
+}
+/* ---------- Ajustes ---------- */
+function vAjustes(){
+  return `<div class="box"><h3 style="margin:0 0 8px">Partida</h3><div class="grid">
+   <label>Puntos con los que empieza cada niño<input type="number" min="1" max="999" value="${cfg.puntosIniciales}" onchange="cfg.puntosIniciales=Math.max(1,Math.round(+this.value)||1);guardarCfg()"></label>
+   ${CONFIG.API_URL?`<label>Nuevo PIN${PIN_DEF?' ⚠ ahora usas el PIN de fábrica (1234)':''}<input placeholder="Escribe un PIN nuevo" onchange="cambiarPin(this)"></label>`:`<label>PIN del maestro<input value="${esc(cfg.pin)}" onchange="if(this.value.trim()){cfg.pin=this.value.trim();guardarCfg()}"></label>`}</div>
+   <p class="nota">El niño pierde cuando se quedan sin puntos (solo en niveles donde "Resta" es mayor que 0). Si llega a la bandera pasa al siguiente nivel.</p></div>
+  <div class="box"><h3 style="margin:0 0 8px">Copia de seguridad</h3>
+   <button class="sm" onclick="bajar('config-bichito.json',JSON.stringify(cfg,null,1),'application/json')">⬇ Guardar niveles y preguntas</button>
+   <label class="sm" style="display:inline-block">⬆ Cargar copia<input type="file" accept=".json" style="display:none" onchange="importarCfg(this.files[0])"></label>
+   <button class="sm red" onclick="sure(this,restaurar)">↺ Restaurar valores de fábrica</button>
+   <button class="sm red" onclick="sure(this,borrarStats)">🗑 Borrar estadísticas</button>
+   <p class="nota">${CONFIG.API_URL?'Los datos se guardan en la base de datos del servidor.':'Modo local: los datos se guardan solo en este navegador. Para juntar a todos los niños configura API_URL.'}</p></div>`;
+}
+function restaurar(){cfg=JSON.parse(JSON.stringify(DEF));guardarCfg();editQ=null;render()}
+function importarCfg(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const c=JSON.parse(r.result);
+  if(!Array.isArray(c.niveles)||!c.niveles.length||!Array.isArray(c.preguntas))throw 0;cfg=c;guardarCfg();render()}catch(e){alert('Archivo no válido')}};r.readAsText(f)}
+(async()=>{
+  if(CONFIG.API_URL){const b=$('btnJugar');b.disabled=true;b.textContent='Cargando…';
+    await Promise.race([cargarRemoto(),new Promise(r=>setTimeout(r,6000))]);b.disabled=false;b.textContent='▶ ¡Jugar!'}
+})();
+if(location.hash==='#admin')abrirAdmin();
+</script>
+</body>
+</html>

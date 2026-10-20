@@ -1,0 +1,18 @@
+EL BICHITO Y LAS PLANTAS - instalación con base de datos
+
+1) En tu hosting (cPanel) crea una base de datos MySQL y un usuario con todos los permisos.
+2) En phpMyAdmin: entra a esa base de datos > Importar > elige database.sql (codificación utf-8) > Continuar.
+3) Abre api/config.php y escribe: nombre de la base, usuario, contraseña, y cambia SECRETO por una frase larga.
+4) Sube por el administrador de archivos (carpeta public_html/bichito):
+      index.html
+      img/   (carpeta)
+      api/   (carpeta)
+   NO subas database.sql ni este LEEME.
+5) Abre https://tudominio.com/bichito/ para jugar.
+   Panel del maestro: botón ⚙ en la pantalla de inicio, o https://tudominio.com/bichito/#admin
+   PIN inicial: 1234  (cámbialo en Ajustes apenas entres)
+
+SI EL JUEGO ESTÁ EN NETLIFY Y LA BASE DE DATOS EN OTRO HOSTING:
+ - En index.html cambia  API_URL: "api/api.php"  por la dirección completa, por ejemplo
+   API_URL: "https://tudominio.com/bichito/api/api.php"
+ - En api/config.php pon  ORIGENES_PERMITIDOS = ['https://tu-sitio.netlify.app'];
